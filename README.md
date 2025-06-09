@@ -1,3 +1,7 @@
+For security reasons, extensions cannot be launched on the Chrome store page.
+The Chrome Web Store also does not allow sorting extensions by number of reviews. 
+The only workaround is to run the script in the console.
+
 Chrome Web Store - sorting by number of ratings
 
 1. Launch Chrome.
@@ -17,6 +21,10 @@ Chrome_Web_Store.gif
 ![Chrome_Web_Store.gif](Chrome_Web_Store.gif)
 
 ***
+Z powodów bezpieczeństwa nie da się uruchamiać rozszerzeń na stronie sklepu Chrome.
+Chrome Web Store nie umożliwia tez sortowania rozszerzeń po ilości recenzji.
+Jedynym obejściem jest uruchomienie skryptu w konsoli.
+
 Chrome Web Store - sortowanie według liczby ocen
 
 1. uruchom przeglądarkę Chrome
