@@ -1,0 +1,190 @@
+// == BEGIN SCRIPT (FINAL VERSION - DIRECT DOWNLOAD ATTEMPT) ==
+
+(function() {
+
+// =========================================================================
+// PART 0: CONFIGURATION
+// =========================================================================
+const MAX_CLICKS = 49;
+// NOTE: The text below is specific to the target website's language (Polish). Do not translate it.
+const buttonTextToFind = "Wczytaj więcej"; 
+const postClickLoadTime = 1500;
+const scrollDelay = 1500;
+const idleTimeout = 5000;
+
+// =========================================================================
+// PART 1: SORTING AND SAVING FUNCTIONS
+// =========================================================================
+
+/**
+ * Prepares the sorted page and attempts to trigger a direct download to the browser's
+ * default "Downloads" folder.
+ */
+function saveResultToFile() {
+    console.log("%c--- ATTEMPTING DIRECT DOWNLOAD... ---", "color: magenta; font-weight: bold;");
+    
+    // 1. Get the entire HTML of the current page.
+    let pageHTML = document.documentElement.outerHTML;
+
+    // 2. Prepare the essential meta tags for the <head> section.
+    // CRITICAL FIX FOR POLISH CHARACTERS: Force UTF-8 encoding directly in the file.
+    const charsetTag = `<meta charset="UTF-8">`;
+    // The <base> tag ensures styles and images load correctly from their original source.
+    const baseTag = `<base href="${window.location.origin}">`;
+    // The CSP tag blocks scripts to prevent the page from "resetting" itself.
+    const cspTag = `<meta http-equiv="Content-Security-Policy" content="script-src 'none';">`;
+
+    // 3. Inject all three tags right after the opening <head> tag.
+    pageHTML = pageHTML.replace(/<head[^>]*>/i, `$&${charsetTag}${cspTag}${baseTag}`);
+    console.log("Created final HTML snapshot with correct encoding and disabled scripts.");
+
+    // 4. Create a Blob (a file-like object in memory).
+    const blob = new Blob([pageHTML], { type: 'text/html' });
+    
+    // 5. Create a temporary, invisible download link.
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `google-sorted-results-${new Date().toISOString().slice(0,10)}.html`;
+    
+    // 6. Add the link to the document, programmatically click it to trigger the download,
+    // and then remove it. This is the standard method for a script-initiated download.
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // 7. Revoke the object URL to free up memory.
+    URL.revokeObjectURL(link.href);
+
+    console.log(`%c--- TASK COMPLETE. ---`, "color: blue; font-size: 1.4em; font-weight: bold;");
+
+    // 8. Display the confirmation message.
+    alert("Download initiated!\n\nThe file should be saving to your browser's default 'Downloads' folder.");
+}
+
+
+/**
+ * Sorts elements on the page based on a numerical value.
+ */
+function runOnPageSorting() {
+    console.log("%c--- STARTING ON-PAGE SORTING... ---", "color: cyan; font-weight: bold;");
+
+    function parseNumberFromText(text) {
+        if (!text) return 0;
+        let cleanedText = text.replace(/[()]/g, '').trim().replace(',', '.');
+        let multiplier = 1;
+        // NOTE: 'tys.' is a Polish abbreviation for 'thousand'. Do not translate.
+        if (cleanedText.includes('tys.')) {
+            multiplier = 1000;
+            cleanedText = cleanedText.replace('tys.', '').trim();
+        }
+        const number = parseFloat(cleanedText);
+        return isNaN(number) ? 0 : number * multiplier;
+    }
+
+    const container = document.querySelector(".QAB7uc");
+    if (!container) {
+        console.error("Could not find the .QAB7uc container for sorting.");
+        return;
+    }
+
+    const itemsToSort = [];
+    const allItems = container.querySelectorAll('.QAB7uc > *');
+    console.log(`Found ${allItems.length} items to analyze.`);
+    
+    allItems.forEach(itemElement => {
+        const numberEl = itemElement.querySelector('span.Y30PE');
+        if (numberEl) {
+            const value = parseNumberFromText(numberEl.textContent);
+            itemsToSort.push({ element: itemElement, value: value });
+        }
+    });
+
+    if (itemsToSort.length === 0) {
+        console.warn("No items found to sort. The selectors might have changed.");
+        return;
+    }
+
+    console.log(`Sorting and rearranging ${itemsToSort.length} items...`);
+    itemsToSort.sort((a, b) => b.value - a.value);
+
+    itemsToSort.forEach(item => {
+        container.appendChild(item.element);
+    });
+
+    console.log(`%c--- ON-PAGE SORTING FINISHED. ---`, "color: lightgreen; font-weight: bold;");
+
+    // <<< Attempt to save the file directly. >>>
+    saveResultToFile();
+}
+
+
+// =========================================================================
+// PART 2: MAIN SCRIPT LOGIC
+// =========================================================================
+
+let clickCounter = 0;
+let idleTimerID;
+let isFinishing = false;
+
+function shutdown(reason) {
+    if (isFinishing) return;
+    isFinishing = true;
+    clearTimeout(idleTimerID);
+    console.log(`%c--- Stopped clicking (${reason}). ---`, "color: orange; font-weight: bold;");
+    
+    console.log("Scrolling to the top to 'wake up' all loaded elements...");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const waitBeforeSortTime = 3000;
+    console.log(`Waiting ${waitBeforeSortTime / 1000} seconds before sorting...`);
+    setTimeout(runOnPageSorting, waitBeforeSortTime);
+}
+
+function performNextStep() {
+    if (isFinishing) return;
+
+    if (clickCounter >= MAX_CLICKS) {
+        shutdown(`Reached the limit of ${MAX_CLICKS} clicks`);
+        return;
+    }
+
+    let clickableTarget = null;
+    const elements = document.querySelectorAll('div, span, button, a');
+    for (const el of elements) {
+        if (el.innerText && el.innerText.trim() === buttonTextToFind) {
+            clickableTarget = el.closest('button, [role="button"]');
+            if (clickableTarget) break;
+        }
+    }
+
+    if (clickableTarget) {
+        console.log(`%cFOUND THE BUTTON!`, "color: lightgreen;");
+        clickableTarget.click();
+        clickCounter++;
+        console.log(`Clicked the button. Click count: ${clickCounter}/${MAX_CLICKS}`);
+        
+        clearTimeout(idleTimerID);
+        idleTimerID = setTimeout(() => shutdown("Idle timeout reached"), idleTimeout);
+
+        setTimeout(performNextStep, postClickLoadTime);
+
+    } else {
+        console.log(`Button not visible. Scrolling down...`);
+        window.scrollBy(0, window.innerHeight * 0.9);
+        setTimeout(performNextStep, scrollDelay);
+    }
+}
+
+// =========================================================================
+// PART 3: SCRIPT LAUNCH
+// =========================================================================
+console.clear();
+console.log("%c--- DIRECT DOWNLOAD SCRIPT LAUNCHED ---", "color: yellow; font-size: 1.2em; font-weight: bold;");
+console.log(`After loading and sorting, the script will attempt to save the result to your default Downloads folder.`);
+
+idleTimerID = setTimeout(() => shutdown("Initial idle timeout reached"), idleTimeout);
+performNextStep();
+
+})();
+
+// == END SCRIPT ==
