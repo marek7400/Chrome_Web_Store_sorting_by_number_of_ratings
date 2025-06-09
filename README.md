@@ -12,6 +12,9 @@ List of possible "Load More" button texts in different languages (lowercase)
         BUTTON_TEXTS: [
             "load more", "wczytaj więcej", "weitere laden", "cargar más", 
             "afficher plus", "carica altro", "ещё"
+            
+Chrome_Web_Store.gif
+![Chrome_Web_Store.gif](Chrome_Web_Store.gif)
 
 ***
 Chrome Web Store - sortowanie według liczby ocen
