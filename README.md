@@ -8,6 +8,11 @@ Chrome Web Store - sorting by number of ratings
 6. Wait for all pages to open (limit 49), sort and save the result to an HTML file
 7. Close the console, reload the page, run the script several times to make sure that all results are displayed (sometimes it interrupts the loading of pages for some unknown reason)
 
+List of possible "Load More" button texts in different languages (lowercase)
+        BUTTON_TEXTS: [
+            "load more", "wczytaj więcej", "weitere laden", "cargar más", 
+            "afficher plus", "carica altro", "ещё"
+
 ***
 Chrome Web Store - sortowanie według liczby ocen
 
